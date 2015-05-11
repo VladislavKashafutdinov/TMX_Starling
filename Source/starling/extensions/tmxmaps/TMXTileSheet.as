@@ -64,14 +64,34 @@ package starling.extensions.tmxmaps
 			loadAtlas();
 		}
 
+		public function loadTileSheetFromTexture(name:String, texture:Texture, tileHeight:uint, startID:uint, spacing:uint, margin:uint):void
+		{
+			trace("creating TMX tilesheet");
+			_name = name;
+			_firstID = startID;
+
+			_tileHeight = tileHeight;
+			_tileWidth = tileWidth;
+			
+			_spacing = spacing;
+			_margin = margin;
+
+			loadAtlasFromTexture(texture, texture.width, texture.height);
+		}
+		
 		/*
 		dynamically create a texture atlas to look up tiles
 		 */
 		private function loadAtlas():void
 		{
+			loadAtlasFromTexture(Texture.fromBitmap(_sheet), _sheet.width, _sheet.height);
+		}
+		
+		private function loadAtlasFromTexture(texture:Texture, imgWidth:Number, imgHeight:Number)
+		{
 			trace("loading atlas");
-			var numRows:uint = (_sheet.height - _margin) / (_tileHeight + _spacing);
-			var numCols:uint = (_sheet.width - _margin) / (_tileWidth + _spacing);
+			var numRows:uint = (imgWidth - _margin) / (_tileHeight + _spacing);
+			var numCols:uint = (imgHeight - _margin) / (_tileWidth + _spacing);
 
 			var id:int = _firstID;
 
@@ -94,7 +114,7 @@ package starling.extensions.tmxmaps
 
 			//trace(newxml);
 
-			_textureAtlas = new TextureAtlas(Texture.fromBitmap(_sheet), newxml);
+			_textureAtlas = new TextureAtlas(texture, newxml);
 			
 			trace("done with atlas, dispatching");
 			dispatchEvent(new starling.events.Event(starling.events.Event.COMPLETE));
