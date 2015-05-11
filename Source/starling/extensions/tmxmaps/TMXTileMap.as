@@ -14,6 +14,7 @@ package starling.extensions.tmxmaps
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import starling.display.Image;
+	import starling.display.Texture;
 	import starling.extensions.tmxmaps.tools.Base64;
 
 	/**
@@ -38,7 +39,8 @@ package starling.extensions.tmxmaps
 		private var _backgroundColor:uint;
 		private var _properties:Dictionary;
 		// used to get the correct tile from various tilesheets
-		private var _embedTilesets:Vector.<Bitmap>;		
+		private var _embedTilesets:Vector.<Bitmap>;
+		private var _tilesetTextures:Vector<Bitmap>;
 
 		public function TMXTileMap():void
 		{
@@ -70,6 +72,15 @@ package starling.extensions.tmxmaps
 			return map;
 		}
 
+		public static function createMapWithTilesetTextures(tmx:XML, tilesets:Vector.<Texture>):TMXTileMap
+		{
+			var map:TMXTileMap = new TMXTileMap();
+			
+			map.loadWithTilesetTextures(tmx, tilesets);
+			
+			return map;
+		}
+		
 		/**
 		 * Loads the tilemap from a tmx file and a vector of tilesets
 		 * @param	tmx The XML from the .tmx file
@@ -77,11 +88,12 @@ package starling.extensions.tmxmaps
 		 */
 		public function load(tmx:XML, tilesets:Vector.<Bitmap>):void
 		{
-			_mapXML = tmx;
-			_embedTilesets = tilesets;
-
-			loadTilesets();
-			loadObjectGroups(tmx);
+			innerLoad(tmx, tilesets, null);
+		}
+		
+		public function loadWithTilesetTextures(tmx:XML, tilesets:Vector.<Texture>):void
+		{
+			innerLoad(tmx, null, tilesets);
 		}
 
 		// Getters ------------------------------------------
@@ -135,6 +147,16 @@ package starling.extensions.tmxmaps
 			return _backgroundColor;
 		}
 
+		private function innerLoad(tmx:XML, tilesets:Vector.<Bitmap>, tilesetTextures:Vector.<Texture>):void
+		{
+			_mapXML = tmx;
+			_embedTilesets = tilesets;
+			_tilesetTextures = tilesetTextures;
+
+			loadTilesets();
+			loadObjectGroups(tmx);
+		}
+		
 		// End getters --------------------------------------
 		// get the number of tilsets from the TMX XML
 		private function getNumTilesets():uint
@@ -254,37 +276,56 @@ package starling.extensions.tmxmaps
 					_properties[mappname] = mappvalue;
 				}
 
-				for (var i:int = 0; i < _numTilesets; i++)
-				{
-					var tileSheet:TMXTileSheet = new TMXTileSheet();
-					//trace(_TMX.tileset[i].@name, _embedTilesets[i], _TMX.tileset[i].@tilewidth, _TMX.tileset[i].@tileheight, _TMX.tileset[i].@firstgid - 1, _TMX.tileset[i].@spacing, _TMX.tileset[i].@margin);
-					tileSheet.loadTileSheet(_mapXML.tileset[i].@name, _embedTilesets[i], _mapXML.tileset[i].@tilewidth, _mapXML.tileset[i].@tileheight, _mapXML.tileset[i].@firstgid - 1, _mapXML.tileset[i].@spacing, _mapXML.tileset[i].@margin);
-					
-					for (var tcounter:int = 0; tcounter < _mapXML.tileset[i].tile.length(); tcounter++)
-					{
-						var tile:TMXTile = tileSheet.tileWithGID(int(_mapXML.tileset[i].tile[tcounter].@id) + tileSheet.firstID + 1);
-						
-						for (var l:int = 0; l < _mapXML.tileset[i].tile[tcounter].properties.property.length(); l++) 
-						{
-							var tilepname:String = _mapXML.tileset[i].tile[tcounter].properties.property[l].@name;
-							var tilepvalue:String = _mapXML.tileset[i].tile[tcounter].properties.property[l].@value;
-							
-							tile.properties[tilepname] = tilepvalue;
-						}
-					}
-					
-					for (var j:int = 0; j < _mapXML.tileset[i].properties.property.length(); j++) 
-					{
-						var pname:String = _mapXML.tileset[i].properties.property[j].@name;
-						var pvalue:String = _mapXML.tileset[i].properties.property[j].@value;
-						tileSheet.properties[pname] = pvalue;
-					}
-					
-					_tilesheets.push(tileSheet);
-				}
+				loadTilesheets();
 				
 				if (!loadLayers())
 					trace("Error loading layers");
+			}
+		}
+		
+		private function loadTilesheets():void
+		{
+			for (var i:int = 0; i < _numTilesets; i++)
+			{
+				var tileSheet:TMXTileSheet = new TMXTileSheet();
+				//trace(_TMX.tileset[i].@name, _embedTilesets[i], _TMX.tileset[i].@tilewidth, _TMX.tileset[i].@tileheight, _TMX.tileset[i].@firstgid - 1, _TMX.tileset[i].@spacing, _TMX.tileset[i].@margin);
+				
+				var name:String = _mapXML.tileset[i].@name;
+				var tilewidth:Number = _mapXML.tileset[i].@tilewidth;
+				var tileheight:Number = _mapXML.tileset[i].@tileheight;
+				var startId:uint = _mapXML.tileset[i].@firstgid - 1;
+				var spacing:uint = _mapXML.tileset[i].@spacing;
+				var margin:uint = _mapXML.tileset[i].@margin;
+				if (_embedTilesets != null)
+				{
+					tileSheet.loadTileSheet(name, _embedTilesets[i], tilewidth, tileheight, startId, spacing, margin);
+				}
+				else
+				{
+					tileSheet.loadTileSheetFromTexture(name, _tilesetTextures[i], tilewidth, tileheight, startId, spacing, margin);
+				}
+				
+				for (var tcounter:int = 0; tcounter < _mapXML.tileset[i].tile.length(); tcounter++)
+				{
+					var tile:TMXTile = tileSheet.tileWithGID(int(_mapXML.tileset[i].tile[tcounter].@id) + tileSheet.firstID + 1);
+					
+					for (var l:int = 0; l < _mapXML.tileset[i].tile[tcounter].properties.property.length(); l++) 
+					{
+						var tilepname:String = _mapXML.tileset[i].tile[tcounter].properties.property[l].@name;
+						var tilepvalue:String = _mapXML.tileset[i].tile[tcounter].properties.property[l].@value;
+						
+						tile.properties[tilepname] = tilepvalue;
+					}
+				}
+				
+				for (var j:int = 0; j < _mapXML.tileset[i].properties.property.length(); j++) 
+				{
+					var pname:String = _mapXML.tileset[i].properties.property[j].@name;
+					var pvalue:String = _mapXML.tileset[i].properties.property[j].@value;
+					tileSheet.properties[pname] = pvalue;
+				}
+				
+				_tilesheets.push(tileSheet);
 			}
 		}
 
