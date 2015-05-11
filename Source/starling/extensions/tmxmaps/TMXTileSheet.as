@@ -64,7 +64,7 @@ package starling.extensions.tmxmaps
 			loadAtlas();
 		}
 
-		public function loadTileSheetFromTexture(name:String, texture:Texture, tileHeight:uint, startID:uint, spacing:uint, margin:uint):void
+		public function loadTileSheetFromTexture(name:String, texture:Texture, tileHeight:uint, tileWidth:uint, startID:uint, spacing:uint, margin:uint):void
 		{
 			trace("creating TMX tilesheet");
 			_name = name;
@@ -87,7 +87,7 @@ package starling.extensions.tmxmaps
 			loadAtlasFromTexture(Texture.fromBitmap(_sheet), _sheet.width, _sheet.height);
 		}
 		
-		private function loadAtlasFromTexture(texture:Texture, imgWidth:Number, imgHeight:Number)
+		private function loadAtlasFromTexture(texture:Texture, imgWidth:Number, imgHeight:Number):void
 		{
 			trace("loading atlas");
 			var numRows:uint = (imgWidth - _margin) / (_tileHeight + _spacing);

@@ -14,8 +14,8 @@ package starling.extensions.tmxmaps
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import starling.display.Image;
-	import starling.display.Texture;
 	import starling.extensions.tmxmaps.tools.Base64;
+	import starling.textures.Texture;
 
 	/**
 	 * @author Felipe Borgiani
@@ -40,7 +40,7 @@ package starling.extensions.tmxmaps
 		private var _properties:Dictionary;
 		// used to get the correct tile from various tilesheets
 		private var _embedTilesets:Vector.<Bitmap>;
-		private var _tilesetTextures:Vector<Bitmap>;
+		private var _tilesetTextures:Vector.<Texture>;
 
 		public function TMXTileMap():void
 		{
